@@ -1,10 +1,8 @@
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import axios from 'axios';
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function FormularioDonacion({ onVolver }) {
-  // Configuración de react-hook-form
   const {
     register,
     handleSubmit,
@@ -13,32 +11,21 @@ function FormularioDonacion({ onVolver }) {
     watch,
   } = useForm();
 
-  // Estados del componente
   const [previewImage, setPreviewImage] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [progress, setProgress] = useState(0); // Para barra de progreso
 
-  // Observar cambios en el campo de imagen
-  const imagenSeleccionada = watch("imagen");
+  const imagenSeleccionada = watch("image");
 
-  // Configuración de Axios (puede ir en un archivo aparte)
-  const api = axios.create({
-    //baseURL: process.env.REACT_APP_API_URL || 'https://tu-backend.com/api',
-    timeout: 10000,
-  });
-
-  // Manejar cambio de imagen para vista previa
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validar tipo y tamaño de imagen
       if (!file.type.match('image.*')) {
         setSubmitError('Solo se permiten archivos de imagen');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) { // 5MB
-        setSubmitError('La imagen no debe exceder los 5MB');
+      if (file.size > 5 * 1024 * 1024) {
+        setSubmitError('La imagen no debe exceder 5MB');
         return;
       }
 
@@ -53,321 +40,222 @@ function FormularioDonacion({ onVolver }) {
     }
   };
 
-  // Función para enviar los datos al backend
   const onSubmit = async (data) => {
     try {
       setSubmitError(null);
       setSubmitSuccess(false);
-      setProgress(0);
 
-      // Crear FormData para enviar archivos
       const formData = new FormData();
-      
-      // Agregar campos al FormData
-      Object.keys(data).forEach(key => {
-        if (key === 'imagen' && data[key][0]) {
-          formData.append(key, data[key][0]);
-        } else if (key !== 'imagen' && data[key]) {
-          formData.append(key, data[key]);
-        }
+
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("category", data.category);
+      formData.append("condition", data.condition);
+      formData.append("city", data.city);
+      formData.append("email", data.email);
+      formData.append("address", data.address);
+      formData.append("expiration_date", data.expiration_date);
+      formData.append("donor_name", data.donor_name);  // nuevo campo
+
+      if (data.image && data.image[0]) {
+        formData.append("image", data.image[0]);
+      }
+
+      const response = await fetch("http://localhost:5000/api/donations", {
+        method: "POST",
+        body: formData
       });
 
-      // Configurar interceptors para mostrar progreso (opcional)
-      const config = {
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          setProgress(percentCompleted);
-        },
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          // 'Authorization': `Bearer ${localStorage.getItem('token')}` // Si necesitas autenticación
-        }
-      };
-
-      // Enviar datos al backend
-      const response = await api.post('/donaciones', formData, config);
-
-      // Manejar respuesta exitosa
-      if (response.data.success) {
+      if (response.ok) {
         setSubmitSuccess(true);
         reset();
         setPreviewImage(null);
-        
-        // Opcional: cerrar formulario después de éxito
         setTimeout(() => {
           onVolver();
-        }, 2000);
+        }, 2500);
       } else {
-        throw new Error(response.data.message || 'Error en el servidor');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error en el servidor');
       }
-      
+
     } catch (error) {
       console.error("Error al enviar los datos:", error);
-      
-      // Manejar diferentes tipos de errores
-      let errorMessage = 'Error al enviar la donación';
-      
-      if (error.response) {
-        // El servidor respondió con un código de error
-        errorMessage = error.response.data?.message || 
-                      `Error ${error.response.status}: ${error.response.statusText}`;
-      } else if (error.request) {
-        // La petición fue hecha pero no hubo respuesta
-        errorMessage = 'No se recibió respuesta del servidor';
-      } else {
-        // Error al configurar la petición
-        errorMessage = error.message;
-      }
-      
-      setSubmitError(errorMessage);
-      setProgress(0);
+      setSubmitError(error.message || "Error al enviar la donación");
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="p-4 border rounded shadow mt-5 bg-white"
-      style={{ maxWidth: "600px", margin: "auto" }}
-    >
-      {/* Mensajes de estado */}
-      {submitSuccess && (
-        <div className="alert alert-success">
-          <i className="bi bi-check-circle-fill me-2"></i>
-          ¡Gracias por tu donación! La información ha sido enviada correctamente.
-        </div>
-      )}
+    <form onSubmit={handleSubmit(onSubmit)} className="p-4 border rounded shadow mt-5 bg-white" style={{ maxWidth: "700px", margin: "auto" }}>
       
       {submitError && (
-        <div className="alert alert-danger">
-          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+        <div className="alert alert-danger mb-4">
           {submitError}
         </div>
       )}
 
-      {/* Barra de progreso (opcional) */}
-      {isSubmitting && progress > 0 && (
-        <div className="progress mb-3">
-          <div 
-            className="progress-bar progress-bar-striped progress-bar-animated" 
-            role="progressbar"
-            style={{ width: `${progress}%` }}
-            aria-valuenow={progress}
-            aria-valuemin="0"
-            aria-valuemax="100"
-          >
-            {progress}%
-          </div>
-        </div>
-      )}
-
-      {/* Campo: Nombre */}
+      {/* NUEVO CAMPO - NOMBRE DEL DONANTE */}
       <div className="mb-3">
-        <label htmlFor="nombre" className="form-label">
-          Nombre del Donante <span className="text-danger">*</span>
-        </label>
+        <label className="form-label">Nombre del Donante <span className="text-danger">*</span></label>
         <input
-          id="nombre"
-          className={`form-control ${errors.nombre ? 'is-invalid' : ''}`}
-          {...register("nombre", { 
-            required: "Este campo es obligatorio",
-            minLength: {
-              value: 3,
-              message: "Mínimo 3 caracteres"
-            }
-          })}
-          placeholder="Tu nombre completo"
+          className={`form-control ${errors.donor_name ? 'is-invalid' : ''}`}
+          {...register("donor_name", { required: "Este campo es obligatorio" })}
+          placeholder="Ej: Juan Pérez"
           disabled={isSubmitting}
         />
-        {errors.nombre && (
-          <div className="invalid-feedback">
-            {errors.nombre.message}
-          </div>
-        )}
+        {errors.donor_name && <div className="invalid-feedback">{errors.donor_name.message}</div>}
       </div>
 
-      {/* Campo: Tipo de Recurso */}
       <div className="mb-3">
-        <label htmlFor="tipo" className="form-label">
-          Tipo de Recurso <span className="text-danger">*</span>
-        </label>
-        <select 
-          id="tipo"
-          className={`form-select ${errors.tipo ? 'is-invalid' : ''}`}
-          {...register("tipo", { required: "Selecciona un recurso" })}
-          disabled={isSubmitting}
-        >
-          <option value="">-- Selecciona --</option>
-          <option value="comida">Comida</option>
-          <option value="ropa">Ropa</option>
-          <option value="medicamentos">Medicamentos</option>
-          <option value="utiles">Útiles escolares</option>
-          <option value="otros">Otros</option>
-        </select>
-        {errors.tipo && (
-          <div className="invalid-feedback">
-            {errors.tipo.message}
-          </div>
-        )}
-      </div>
-
-      {/* Campo: Cantidad */}
-      <div className="mb-3">
-        <label htmlFor="cantidad" className="form-label">
-          Cantidad <span className="text-danger">*</span>
-        </label>
+        <label className="form-label">Nombre del Producto <span className="text-danger">*</span></label>
         <input
-          id="cantidad"
-          type="number"
-          className={`form-control ${errors.cantidad ? 'is-invalid' : ''}`}
-          {...register("cantidad", {
-            required: "La cantidad es obligatoria",
-            min: { 
-              value: 1, 
-              message: "Debe ser al menos 1" 
-            },
-            max: {
-              value: 1000,
-              message: "Máximo 1000 unidades"
-            }
-          })}
+          className={`form-control ${errors.title ? 'is-invalid' : ''}`}
+          {...register("title", { required: "Este campo es obligatorio" })}
+          placeholder="Ej: Ropa de invierno"
           disabled={isSubmitting}
         />
-        {errors.cantidad && (
-          <div className="invalid-feedback">
-            {errors.cantidad.message}
-          </div>
-        )}
+        {errors.title && <div className="invalid-feedback">{errors.title.message}</div>}
       </div>
 
-      {/* Campo: Fecha de entrega */}
       <div className="mb-3">
-        <label htmlFor="fecha" className="form-label">
-          Fecha de entrega <span className="text-danger">*</span>
-        </label>
-        <input
-          id="fecha"
-          type="date"
-          className={`form-control ${errors.fecha ? 'is-invalid' : ''}`}
-          {...register("fecha", { 
-            required: "Indica una fecha",
-            validate: {
-              futureDate: (value) => {
-                const selectedDate = new Date(value);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return selectedDate >= today || "La fecha debe ser hoy o en el futuro";
-              }
-            }
-          })}
-          disabled={isSubmitting}
-        />
-        {errors.fecha && (
-          <div className="invalid-feedback">
-            {errors.fecha.message}
-          </div>
-        )}
-      </div>
-
-      {/* Campo: Comentarios */}
-      <div className="mb-3">
-        <label htmlFor="comentarios" className="form-label">
-          Comentarios adicionales
-        </label>
+        <label className="form-label">Descripción <span className="text-danger">*</span></label>
         <textarea
-          id="comentarios"
-          className="form-control"
-          {...register("comentarios", {
-            maxLength: {
-              value: 500,
-              message: "Máximo 500 caracteres"
-            }
-          })}
-          placeholder="Detalles sobre tu donación..."
+          className={`form-control ${errors.description ? 'is-invalid' : ''}`}
+          {...register("description", { required: "Este campo es obligatorio" })}
+          placeholder="Describe brevemente la donación"
           rows="3"
           disabled={isSubmitting}
         />
-        {errors.comentarios && (
-          <small className="text-danger">
-            {errors.comentarios.message}
-          </small>
-        )}
+        {errors.description && <div className="invalid-feedback">{errors.description.message}</div>}
       </div>
 
-      {/* Campo: Imagen */}
-      <div className="mb-4">
-        <label htmlFor="imagen" className="form-label">
-          Foto del recurso (opcional)
-        </label>
+      <div className="mb-3">
+        <label className="form-label">Categoría <span className="text-danger">*</span></label>
+        <select
+          className={`form-select ${errors.category ? 'is-invalid' : ''}`}
+          {...register("category", { required: "Selecciona una categoría" })}
+          disabled={isSubmitting}
+        >
+          <option value="">-- Selecciona --</option>
+          <option value="Ropa">Ropa</option>
+          <option value="Comida">Comida</option>
+          <option value="Medicamentos">Medicamentos</option>
+          <option value="Útiles escolares">Útiles escolares</option>
+          <option value="Otros">Otros</option>
+        </select>
+        {errors.category && <div className="invalid-feedback">{errors.category.message}</div>}
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">Condición <span className="text-danger">*</span></label>
+        <select
+          className={`form-select ${errors.condition ? 'is-invalid' : ''}`}
+          {...register("condition", { required: "Selecciona el estado del producto" })}
+          disabled={isSubmitting}
+        >
+          <option value="">-- Selecciona --</option>
+          <option value="Nuevo">Nuevo</option>
+          <option value="Usado">Usado</option>
+          <option value="No aplica">No aplica</option>
+        </select>
+        {errors.condition && <div className="invalid-feedback">{errors.condition.message}</div>}
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">Ciudad <span className="text-danger">*</span></label>
+        <select
+          className={`form-select ${errors.city ? 'is-invalid' : ''}`}
+          {...register("city", { required: "Selecciona una ciudad" })}
+          disabled={isSubmitting}
+        >
+          <option value="">-- Selecciona --</option>
+          <option value="Bogotá">Bogotá</option>
+          <option value="Medellín">Medellín</option>
+          <option value="Cali">Cali</option>
+          <option value="Barranquilla">Barranquilla</option>
+          <option value="Cartagena">Cartagena</option>
+          <option value="Otra">Otra</option>
+        </select>
+        {errors.city && <div className="invalid-feedback">{errors.city.message}</div>}
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">Correo Electrónico <span className="text-danger">*</span></label>
         <input
-          id="imagen"
-          type="file"
-          accept="image/*"
-          className={`form-control ${errors.imagen ? 'is-invalid' : ''}`}
-          {...register("imagen", {
-            validate: {
-              fileSize: (files) => 
-                !files[0] || files[0].size <= 5 * 1024 * 1024 || "El archivo no debe exceder 5MB",
-              fileType: (files) =>
-                !files[0] || files[0].type.match('image.*') || "Solo se permiten imágenes"
+          className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+          type="email"
+          {...register("email", { 
+            required: "El correo es obligatorio",
+            pattern: {
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: "Correo inválido"
             }
           })}
+          placeholder="tucorreo@example.com"
+          disabled={isSubmitting}
+        />
+        {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">Dirección de Entrega <span className="text-danger">*</span></label>
+        <input
+          className={`form-control ${errors.address ? 'is-invalid' : ''}`}
+          {...register("address", { required: "La dirección es obligatoria" })}
+          placeholder="Dirección exacta"
+          disabled={isSubmitting}
+        />
+        {errors.address && <div className="invalid-feedback">{errors.address.message}</div>}
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">Fecha de expiración de la publicación <span className="text-danger">*</span></label>
+        <input
+          type="date"
+          className={`form-control ${errors.expiration_date ? 'is-invalid' : ''}`}
+          {...register("expiration_date", { required: "Debes indicar una fecha de expiración" })}
+          disabled={isSubmitting}
+        />
+        {errors.expiration_date && <div className="invalid-feedback">{errors.expiration_date.message}</div>}
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">Imagen (opcional)</label>
+        <input
+          type="file"
+          accept="image/*"
+          className={`form-control ${errors.image ? 'is-invalid' : ''}`}
+          {...register("image")}
           onChange={handleImageChange}
           disabled={isSubmitting}
         />
-        {errors.imagen && (
-          <div className="invalid-feedback">
-            {errors.imagen.message}
-          </div>
-        )}
-        
-        {/* Vista previa de la imagen */}
+        {errors.image && <div className="invalid-feedback">{errors.image.message}</div>}
+
         {previewImage && (
           <div className="mt-3 text-center">
             <p className="fw-bold">Vista previa:</p>
-            <img
-              src={previewImage}
-              alt="Vista previa de la donación"
-              className="img-thumbnail"
-              style={{ maxHeight: "200px" }}
-            />
+            <img src={previewImage} alt="Vista previa" className="img-thumbnail" style={{ maxHeight: "200px" }} />
           </div>
         )}
       </div>
 
-      {/* Botones de acción */}
       <div className="d-flex justify-content-between">
-        <button 
-          type="button" 
-          className="btn btn-outline-secondary"
-          onClick={onVolver}
-          disabled={isSubmitting}
-        >
-          <i className="bi bi-arrow-left me-2"></i>
+        <button type="button" className="btn btn-outline-secondary" onClick={onVolver} disabled={isSubmitting}>
           Volver atrás
         </button>
-        <button 
-          type="submit" 
-          className="btn btn-primary"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              Enviando...
-            </>
-          ) : (
-            <>
-              <i className="bi bi-send-check me-2"></i>
-              Enviar Donación
-            </>
-          )}
+        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+          {isSubmitting ? "Enviando..." : "Enviar Donación"}
         </button>
       </div>
+
+      {/* Mensaje de éxito abajo */}
+      {submitSuccess && (
+        <div className="alert alert-success mt-4">
+          ¡Gracias por tu donación! La información ha sido enviada correctamente.
+        </div>
+      )}
     </form>
   );
 }
 
 export default FormularioDonacion;
+
