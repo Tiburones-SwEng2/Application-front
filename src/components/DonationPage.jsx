@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import FormularioDonacion from "./FormularioDonacion";
 import { FaHandsHelping, FaDonate, FaBoxOpen, FaMedkit, FaTshirt, FaHeart } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
+import { useNavigate } from 'react-router-dom'
 import "./DonationPage.css";
 
 function DonacionPage() {
@@ -51,7 +52,9 @@ function DonacionPage() {
   );
 }
 
-const DonationHero = ({ onDonarClick }) => (
+const DonationHero = ({ onDonarClick }) => {
+  const navigate = useNavigate();
+  return(
   <div className="hero-container">
     <div className="hero-content">
       <div className="hero-text">
@@ -100,6 +103,15 @@ const DonationHero = ({ onDonarClick }) => (
             <FaDonate className="button-icon" />
             Realizar donación
           </button>
+
+          <button 
+            onClick={() => navigate('/donaciones')} // Navegación programática
+            className="donate-button secondary"
+          >
+            <FaBoxOpen className="button-icon" />
+            Ver donaciones disponibles
+          </button>
+          
           <div className="impact-stats">
             <div className="stat-item">
               <span className="stat-number">1,240+</span>
@@ -122,7 +134,8 @@ const DonationHero = ({ onDonarClick }) => (
       </div>
     </div>
   </div>
-);
+)
+}
 
 const DonationModal = ({ onClose }) => (
   <div className="modal-overlay" onClick={onClose}>
