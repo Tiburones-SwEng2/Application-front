@@ -60,7 +60,7 @@ function ProductRequestModal({ selectedProduct, submitMessage, donorContact, isS
                                     <div className="pl-modal-actions">
                                         <button type="button" onClick={() => {
                                             closeModal();
-                                            fetchProducts();
+                                            
                                         }}>
                                             Cerrar
                                         </button>
