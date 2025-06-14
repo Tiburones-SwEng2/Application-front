@@ -122,14 +122,6 @@ const DonationHero = ({ onDonarClick }) => {
               <span className="stat-label">Familias beneficiadas</span>
             </div>
           </div>
-          <div className="testimonial">
-            <blockquote>
-              "Gracias a su apoyo, hemos podido alimentar a más de 200 familias este mes"
-            </blockquote>
-            <div className="testimonial-author">
-              - María González, Directora del Programa
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -1,12 +1,41 @@
-# React + Vite
+# FrontEnd Plataforma de Donaciones Solidarias
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 🚀 Características principales
 
-Currently, two official plugins are available:
+- 📦 Catálogo de donaciones disponibles
+- 🏷️ Filtros por categoría, ciudad y condición
+- 📱 Diseño responsive para todos los dispositivos
+- ✉️ Sistema de notificaciones por email
+- 🔍 Visualización de productos
+- 🛒 Solicitud de artículos con un click
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🛠️ Requisitos técnicos
 
-## Expanding the ESLint configuration
+- Node.js v16 o superior
+- npm v8 o superior. Se instala con Node.js, verificar su activación con 
+    ```bash
+    npm -v
+    
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## ⚙️ Instalación
+
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/Tiburones-SwEng2/Application-front
+
+2. Instala las dependencias:
+    ```bash
+    npm install
+
+## 🏃 Ejecución
+
+    npm run dev
+
+### Esto iniciará el servidor de desarrollo de Vite y abrirá automáticamente:
+
+🌐 http://localhost:5173 en tu navegador predeterminado.
+
+### 🌐 Rutas principales
+- "/" - Página principal con información de donaciones
+
+- "/donaciones" - Listado de artículos disponibles
