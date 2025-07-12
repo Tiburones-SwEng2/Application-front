@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FaHeart, FaHome, FaShoppingCart } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import Cart from './Cart';
+import Cart from './cart';
 import useCart from './useCart';
 import './ProductList.css';
 import './DonationPage.css';
@@ -18,6 +18,7 @@ function ProductList() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [selectedCity, setSelectedCity] = useState('Todas');
   const [selectedCondition, setSelectedCondition] = useState('Todas');
+  const [authChecked, setAuthChecked] = useState(false);
 
   // Cart functionality using custom hook
   const { 
@@ -26,8 +27,19 @@ function ProductList() {
     setShowCart, 
     addToCart, 
     removeFromCart, 
-    claimCartItems 
+    claimCartItems,
+    fetchCart 
   } = useCart();
+
+  // Verificar autenticación al cargar
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchCart().then(() => setAuthChecked(true));
+    } else {
+      setAuthChecked(true); // Continuar sin carrito si no está autenticado
+    }
+  }, []);
 
   const fetchProducts = () => {
     setLoading(true);
@@ -51,6 +63,16 @@ function ProductList() {
     fetchProducts();
   }, []);
 
+  const handleAddToCart = (product) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Por favor inicia sesión para añadir al carrito');
+      navigate('/login'); // Redirigir a login si no está autenticado
+      return;
+    }
+    addToCart(product);
+  };
+
   const filteredProducts = products.filter(p => {
     const matchesCategory = selectedCategory === 'Todos' || p.category === selectedCategory;
     const matchesCity = selectedCity === 'Todas' || p.city === selectedCity;
@@ -58,7 +80,7 @@ function ProductList() {
     return matchesCategory && matchesCity && matchesCondition;
   });
 
-  if (loading) {
+  if (loading || !authChecked) {
     return (
       <div className="pl-product-app">
         <div className="loading-container">
@@ -97,16 +119,26 @@ function ProductList() {
                 </button>
               </div>
 
-              <div className="home-button-container">
+              <div className="cart-button-container">
                 <button 
-                  onClick={() => setShowCart(!showCart)} 
-                  className="home-button"
+                  onClick={() => {
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                      alert('Por favor inicia sesión para ver tu carrito');
+                      navigate('/login');
+                      return;
+                    }
+                    setShowCart(!showCart);
+                  }} 
+                  className="cart-button"
                   aria-label="Ver carrito"
                 >
                   <FaShoppingCart className="cart-icon" />
                   <span className="cart-text">Carrito</span>
-                  {cart.length > 0 && (
-                    <span className="cart-badge">{cart.length}</span>
+                  {cart.filter(item => item.status === 'pending').length > 0 && (
+                    <span className="cart-badge">
+                      {cart.filter(item => item.status === 'pending').length}
+                    </span>
                   )}
                 </button>
               </div>
@@ -171,10 +203,12 @@ function ProductList() {
                     <h3>{product.title}</h3>
                     <p>{product.description}</p>
                     <button 
-                      onClick={() => addToCart(product)}
+                      onClick={() => handleAddToCart(product)}
                       className="add-to-cart-btn"
+                      disabled={!product.available} // Deshabilitar si no está disponible
                     >
-                      <FaShoppingCart /> Añadir
+                      <FaShoppingCart /> 
+                      {product.available ? 'Añadir' : 'No disponible'}
                     </button>
                   </div>
                 ))}

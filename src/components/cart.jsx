@@ -22,7 +22,7 @@ const Cart = ({ cart, onClose, onRemove, onClaim }) => {
           <>
             <div className="cart-items">
               {cart.map(item => (
-                <div key={item.id} className="cart-item">
+                <div key={item._id} className="cart-item"> {/* Cambiado de id a _id */}
                   <img 
                     src={item.donation_details?.image_url 
                       ? `http://localhost:5001/proxy-image/${extractFilename(item.donation_details.image_url)}`
@@ -30,18 +30,23 @@ const Cart = ({ cart, onClose, onRemove, onClaim }) => {
                     alt={item.donation_details?.title}
                   />
                   <div className="cart-item-info">
-                    <h4>{item.donation_details?.title}</h4>
-                    <p>{item.donation_details?.description}</p>
+                    <h4>{item.donation_details?.title || 'Sin título'}</h4>
+                    <p>{item.donation_details?.description || 'Sin descripción'}</p>
                     <span className="cart-item-city">
                       {item.donation_details?.city || 'Sin ubicación'}
                     </span>
+                    <span className="cart-item-status">
+                      Estado: {item.status === 'pending' ? 'Pendiente' : 'Reclamado'}
+                    </span>
                   </div>
-                  <button 
-                    onClick={() => onRemove(item.id)}
-                    className="remove-item"
-                  >
-                    Eliminar
-                  </button>
+                  {item.status === 'pending' && ( // Solo mostrar botón si está pendiente
+                    <button 
+                      onClick={() => onRemove(item._id)} // Cambiado de id a _id
+                      className="remove-item"
+                    >
+                      Eliminar
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -50,8 +55,9 @@ const Cart = ({ cart, onClose, onRemove, onClaim }) => {
               <button 
                 onClick={onClaim}
                 className="claim-button"
+                disabled={cart.every(item => item.status !== 'pending')} // Deshabilitar si no hay items pendientes
               >
-                Reclamar Donaciones ({cart.length})
+                Reclamar Donaciones ({cart.filter(item => item.status === 'pending').length})
               </button>
             </div>
           </>
