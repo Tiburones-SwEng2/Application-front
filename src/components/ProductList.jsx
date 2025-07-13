@@ -41,18 +41,28 @@ function ProductList() {
     }
   }, []);
 
-  const fetchProducts = () => {
+  const fetchProducts = async () => {
     setLoading(true);
-    fetch('http://localhost:5001/filteredDonations')
-      .then((response) => response.json())
-      .then((data) => {
-        setProducts(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error al cargar productos:', error);
-        setLoading(false);
+    try {
+      const token = localStorage.getItem('token');
+      console.log(token);
+      const response = await fetch('http://localhost:5001/filteredDonations', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar productos');
+      }
+      
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Error al cargar productos:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   function extractFilename(path) {
@@ -67,7 +77,7 @@ function ProductList() {
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Por favor inicia sesión para añadir al carrito');
-      navigate('/login'); // Redirigir a login si no está autenticado
+      navigate('/login');
       return;
     }
     addToCart(product);
@@ -185,8 +195,8 @@ function ProductList() {
 
             <div className="pl-product-panel">
               <div className="pl-product-grid">
-                {filteredProducts.map((product) => (
-                  <div className="pl-product-card" key={product.id}>
+  {filteredProducts.map((product) => (
+    <div className="pl-product-card" key={product._id || product.id || Math.random().toString(36).substr(2, 9)}>
                     <img
                       src={
                         extractFilename(product.image_url) 
@@ -205,7 +215,7 @@ function ProductList() {
                     <button 
                       onClick={() => handleAddToCart(product)}
                       className="add-to-cart-btn"
-                      disabled={!product.available} // Deshabilitar si no está disponible
+                      disabled={!product.available}
                     >
                       <FaShoppingCart /> 
                       {product.available ? 'Añadir' : 'No disponible'}

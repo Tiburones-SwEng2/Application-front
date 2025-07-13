@@ -65,6 +65,22 @@ const useCart = () => {
     }
   };
 
+  // Refrescar el carrito después de reclamar
+const refreshCart = async () => {
+  const res = await fetch('/api/cart');
+  const data = await res.json();
+  setCartItems(data.items.filter(item => item.status === 'pending')); // Filtrar solo pendientes
+};
+
+const handleClaim = async (itemId) => {
+  try {
+    await claimItem(itemId); // Tu función existente
+    await refreshCart(); // Actualizar el estado del frontend
+    showToast("Item claimed successfully!");
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+};
   const claimCartItems = async () => {
     try {
       // Reclamar cada item individualmente
