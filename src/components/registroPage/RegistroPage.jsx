@@ -55,19 +55,40 @@ function RegistroPage() {
     
     if (validateForm()) {
       setIsSubmitting(true);
+      setErrors({});
       
       try {
-        // Aquí iría la llamada a tu API de registro
-        console.log("Registrando usuario:", formData);
+        const response = await fetch(`${import.meta.env.VITE_API_TOKEN}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.nombre,
+            email: formData.email,
+            password: formData.password
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          if (data.error === 'Email already exists') {
+            throw new Error('Este email ya está registrado');
+          } else {
+            throw new Error(data.message || 'Error en el registro');
+          }
+        }
+
+        navigate("/login", { 
+          state: { 
+            registrationSuccess: true,
+            email: formData.email
+          } 
+        });
         
-        // Simulamos un retraso de red
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Redirigir al usuario después del registro exitoso
-        navigate("/login", { state: { registrationSuccess: true } });
       } catch (error) {
-        console.error("Error en el registro:", error);
-        setErrors({ submit: "Error al registrar. Inténtalo nuevamente." });
+        setErrors({ 
+          submit: error.message || "Error al registrar. Inténtalo nuevamente." 
+        });
       } finally {
         setIsSubmitting(false);
       }
