@@ -369,6 +369,11 @@ function ProductList() {
         <div className="footer-content">
           <div className="footer-heart"><FaHeart /></div>
           <p>© {new Date().getFullYear()} Iniciativa Solidaria. Todos los derechos reservados.</p>
+          <div className="footer-links">
+            <a href="/privacidad">Política de Privacidad</a>
+            <a href="/contacto">Contacto</a>
+            <a href="/transparencia">Transparencia</a>
+          </div>
         </div>
       </footer>
 
