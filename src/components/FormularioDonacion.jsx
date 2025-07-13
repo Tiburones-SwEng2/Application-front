@@ -3,6 +3,7 @@ import { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function FormularioDonacion({ onVolver }) {
+    // Configuración de react-hook-form
   const {
     register,
     handleSubmit,
@@ -10,7 +11,7 @@ function FormularioDonacion({ onVolver }) {
     reset,
     watch,
   } = useForm();
-
+    // Estados del componente
   const [previewImage, setPreviewImage] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
