@@ -18,31 +18,44 @@ function LoginPage() {
   }, []);
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-
+  e.preventDefault();
+  
+  if (validateForm()) {
+    setIsSubmitting(true);
+    
     try {
       const res = await fetch('http://localhost:5002/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role: 'admin' })
+        body: JSON.stringify({ 
+          email: formData.email, 
+          password: formData.password,
+          role: 'admin' // Ajusta según necesites
+        })
       });
 
       const data = await res.json();
 
       if (res.ok) {
+        // Guardar el token y datos del usuario como en tu versión anterior
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('user_email', data.email);
         localStorage.setItem('user_name', data.name);
         localStorage.setItem('user_admin', data.admin);
-        navigate('/');
+        
+        // Redirigir al dashboard
+        navigate("/dashboard");
       } else {
-        setError(data.message || 'Error al iniciar sesión');
+        setErrors({ submit: data.message || 'Error al iniciar sesión' });
       }
-    } catch (err) {
-      setError('Error de red o del servidor');
-      console.error(err);
+    } catch (error) {
+      console.error("Error en el login:", error);
+      setErrors({ submit: "Error de red o del servidor" });
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }
+};
 
   const handleLogout = () => {
     localStorage.removeItem('token');

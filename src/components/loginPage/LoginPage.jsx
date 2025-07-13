@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaSignInAlt, FaLock, FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import "./LoginPage.css"; // Asegúrate de crear este archivo CSS
+import "./LoginPage.css";
 import { ParticlesBackground } from "./ParticlesBackground";
 
 function LoginPage() {
@@ -16,7 +16,6 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Mostrar mensaje de éxito si viene del registro
   const registrationSuccess = location.state?.registrationSuccess;
 
   const handleChange = (e) => {
@@ -29,42 +28,58 @@ function LoginPage() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.email.trim()) {
       newErrors.email = "El email es requerido";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Email no válido";
     }
-    
+
     if (!formData.password) {
       newErrors.password = "La contraseña es requerida";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (validateForm()) {
-      setIsSubmitting(true);
-      
-      try {
-        // Aquí iría la llamada a tu API de autenticación
-        console.log("Iniciando sesión:", formData);
-        
-        // Simulamos un retraso de red
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Redirigir al usuario después del login exitoso
-        navigate("/dashboard"); // Cambia esto por tu ruta deseada
-      } catch (error) {
-        console.error("Error en el login:", error);
-        setErrors({ submit: "Credenciales incorrectas. Inténtalo nuevamente." });
-      } finally {
-        setIsSubmitting(false);
+
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch("http://localhost:5002/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          role: "admin" // Asegúrate que tu backend lo espera
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("user_email", data.email);
+        localStorage.setItem("user_name", data.name);
+        localStorage.setItem("user_admin", data.admin);
+
+        navigate("/dashboard"); // O cualquier ruta protegida
+      } else {
+        setErrors({ submit: data.message || "Credenciales incorrectas" });
       }
+    } catch (error) {
+      console.error("Error en el login:", error);
+      setErrors({ submit: "Error de red o del servidor" });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -74,7 +89,7 @@ function LoginPage() {
 
   return (
     <div className="login-container">
-        <ParticlesBackground />
+      <ParticlesBackground />
       <div className="login-card">
         <div className="login-header">
           <div className="login-icon">
@@ -82,17 +97,17 @@ function LoginPage() {
           </div>
           <h2>Iniciar sesión</h2>
           <p>Accede a tu cuenta para continuar</p>
-          
+
           {registrationSuccess && (
             <div className="success-message">
               ¡Registro exitoso! Por favor inicia sesión.
             </div>
           )}
         </div>
-        
+
         <form onSubmit={handleSubmit} className="login-form">
           {errors.submit && <div className="error-message">{errors.submit}</div>}
-          
+
           <div className={`form-group ${errors.email ? "has-error" : ""}`}>
             <label htmlFor="email">
               <FaEnvelope className="input-icon" /> Correo electrónico
@@ -108,7 +123,7 @@ function LoginPage() {
             />
             {errors.email && <span className="error-text">{errors.email}</span>}
           </div>
-          
+
           <div className={`form-group ${errors.password ? "has-error" : ""}`}>
             <label htmlFor="password">
               <FaLock className="input-icon" /> Contraseña
@@ -123,8 +138,8 @@ function LoginPage() {
                 placeholder="Ingresa tu contraseña"
                 autoComplete="current-password"
               />
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="toggle-password"
                 onClick={togglePasswordVisibility}
                 aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
@@ -134,7 +149,7 @@ function LoginPage() {
             </div>
             {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
-          
+
           <div className="form-options">
             <label className="remember-me">
               <input
@@ -145,34 +160,26 @@ function LoginPage() {
               />
               <span>Recordar mi sesión</span>
             </label>
-            
+
             <Link to="/recuperar-contrasena" className="forgot-password">
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
-          
-          <button 
-            type="submit" 
-            className="login-button"
-            disabled={isSubmitting}
-          >
+
+          <button type="submit" className="login-button" disabled={isSubmitting}>
             {isSubmitting ? "Iniciando sesión..." : "Iniciar sesión"}
           </button>
         </form>
-        
+
         <div className="register-link">
           ¿No tienes una cuenta? <Link to="/registro">Regístrate aquí</Link>
         </div>
-        
+
         <div className="social-login">
           <p>O inicia sesión con:</p>
           <div className="social-buttons">
-            <button type="button" className="social-button google">
-              Google
-            </button>
-            <button type="button" className="social-button facebook">
-              Facebook
-            </button>
+            <button type="button" className="social-button google">Google</button>
+            <button type="button" className="social-button facebook">Facebook</button>
           </div>
         </div>
       </div>
