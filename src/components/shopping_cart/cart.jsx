@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FaShoppingCart, FaTimes, FaSpinner, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaSpinner, FaTrash } from 'react-icons/fa';
+import CartItem from './CartItem'; 
 import './cart.css';
 
 const Cart = ({ cart, onClose, onRemove, onClaim, onClearCart, isClaiming }) => {
@@ -25,10 +26,6 @@ const Cart = ({ cart, onClose, onRemove, onClaim, onClearCart, isClaiming }) => 
     }
   };
 
-  const extractFilename = (path) => {
-    return path ? path.split('/').pop() : null;
-  };
-
   const pendingItems = cart.filter(item => item.status === 'pending');
   const hasItems = cart.length > 0;
 
@@ -47,27 +44,11 @@ const Cart = ({ cart, onClose, onRemove, onClaim, onClearCart, isClaiming }) => 
           <>
             <div className="cart-items">
               {cart.map(item => (
-                <div key={item._id} className="cart-item">
-                  <img 
-                    src={item.donation_details?.image_url 
-                      ? `http://localhost:5001/proxy-image/${extractFilename(item.donation_details.image_url)}`
-                      : '/no_image_available.jpg'}
-                    alt={item.donation_details?.title}
-                  />
-                  <div className="cart-item-info">
-                    <h4>{item.donation_details?.title || 'Sin título'}</h4>
-                    <p>{item.donation_details?.description || 'Sin descripción'}</p>
-                    <span className="cart-item-status">
-                      Estado: {item.status === 'pending' ? 'Pendiente' : 'Reclamado'}
-                    </span>
-                  </div>
-                  <button 
-                    onClick={() => onRemove(item._id)}
-                    className="remove-item"
-                  >
-                    Eliminar
-                  </button>
-                </div>
+                <CartItem 
+                  key={item._id} 
+                  item={item}
+                  onRemove={onRemove}
+                />
               ))}
             </div>
             
