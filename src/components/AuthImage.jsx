@@ -51,7 +51,7 @@ const AuthImage = ({ filename, alt, ...props }) => {
   return <img src={src} alt={alt} onError={() => setSrc('/no_image_available.jpg')} {...props} />;
 };
 
-// Función para limpiar el cache cuando sea necesario
+
 export const clearImageCache = () => {
   imageCache.forEach(url => URL.revokeObjectURL(url));
   imageCache.clear();
