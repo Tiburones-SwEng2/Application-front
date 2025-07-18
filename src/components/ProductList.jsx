@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { FaHeart, FaHome, FaShoppingCart, FaCheck, FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
+import { FaHeart, FaHome, FaShoppingCart, FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
 import Cart from './shopping_cart/cart';
 import useCart from './shopping_cart/useCart';
+import ProductCard from './ProductCard';
 import './ProductList.css';
 import './DonationPage.css';
 
@@ -21,7 +22,7 @@ function ProductList() {
   const [addedProducts, setAddedProducts] = useState({});
   const [isClaiming, setIsClaiming] = useState(false);
   const [addingProducts, setAddingProducts] = useState({});
-  const [userData, setUserData] = useState(null); // Nuevo estado para datos de usuario
+  const [userData, setUserData] = useState(null);
 
   const { 
     cart, 
@@ -41,7 +42,6 @@ function ProductList() {
     const storedUserData = localStorage.getItem('userData') || sessionStorage.getItem('userData');
 
     if (token && storedUserData) {
-      console.log(token);
       try {
         const parsedUserData = JSON.parse(storedUserData);
         setUserData(parsedUserData);
@@ -51,7 +51,6 @@ function ProductList() {
         handleLogout();
       }
     } else {
-      
       alert("Inicia sesión para ver los productos disponibles.");
       navigate("/");
     }
@@ -66,18 +65,14 @@ function ProductList() {
     });
     setAddedProducts(inCartProducts);
   }, [cart]);
+
   const handleLogout = () => {
-    // Limpiar almacenamiento local
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
     sessionStorage.removeItem('authToken');
     sessionStorage.removeItem('userData');
-    
-    // Resetear estados
     setUserData(null);
     setAuthChecked(false);
-    
-    // Redirigir a home
     navigate('/');
   };
 
@@ -102,10 +97,6 @@ function ProductList() {
     }
   };
 
-  function extractFilename(path) {
-    return path ? path.split('/').pop() : null;
-  }
-
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -119,16 +110,11 @@ function ProductList() {
     }
     
     try {
-      // Marcamos este producto como "añadiendo"
       setAddingProducts(prev => ({ ...prev, [product.id]: true }));
-      
       await addToCart(product);
-      
-      // El efecto useEffect que observa el carrito actualizará addedProducts automáticamente
     } catch (error) {
       console.error('Error al añadir al carrito:', error);
     } finally {
-      // Eliminamos el estado "añadiendo" para este producto
       setAddingProducts(prev => {
         const newState = { ...prev };
         delete newState[product.id];
@@ -137,28 +123,15 @@ function ProductList() {
     }
   };
 
-  useEffect(() => {
-    const inCartProducts = {};
-    cart.forEach(item => {
-      if (item.status === 'pending' && item.donation_id) {
-        inCartProducts[item.donation_id] = true;
-      }
-    });
-    setAddedProducts(inCartProducts);
-  }, [cart]);
-
   const handleClearCartSuccess = () => {
-    // Limpiar los productos añadidos del estado local
     setAddedProducts({});
   };
 
   const handleClaimSuccess = (claimedIds) => {
-    // Filtrar los productos reclamados
     setProducts(prevProducts => 
       prevProducts.filter(product => !claimedIds.includes(product.id))
     );
     
-    // Actualizar el estado de addedProducts
     setAddedProducts(prev => {
       const newState = {...prev};
       claimedIds.forEach(id => delete newState[id]);
@@ -317,47 +290,14 @@ function ProductList() {
             <div className="pl-product-panel">
               <div className="pl-product-grid">
                 {filteredProducts.map((product) => (
-                  <div className="pl-product-card" key={product._id || product.id || Math.random().toString(36).substr(2, 9)}>
-                    <img
-                      src={
-                        extractFilename(product.image_url) 
-                          ? `http://localhost:5001/proxy-image/${extractFilename(product.image_url)}`
-                          : '/no_image_available.jpg'
-                      }
-                      alt={product.title}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/no_image_available.jpg';
-                      }}
-                    />
-
-                    <h3>{product.title}</h3>
-                    <h5>{product.city}</h5>
-                    <p>{product.description}</p>
-                    <button 
-    onClick={() => handleAddToCart(product)}
-    className={`add-to-cart-btn ${
-      addedProducts[product.id] ? 'added' : 
-      addingProducts[product.id] ? 'adding' : ''
-    }`}
-    disabled={!product.available || addedProducts[product.id] || addingProducts[product.id]}
-  >
-    {addingProducts[product.id] ? (
-      <>
-        <FaShoppingCart /> Añadiendo...
-      </>
-    ) : addedProducts[product.id] ? (
-      <>
-        <FaCheck /> Añadido
-      </>
-    ) : (
-      <>
-        <FaShoppingCart /> 
-        {product.available ? 'Añadir' : 'No disponible'}
-      </>
-    )}
-  </button>
-                  </div>
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAddToCart={handleAddToCart}
+                    isAdded={addedProducts[product.id]}
+                    isAdding={addingProducts[product.id]}
+                    isAvailable={product.available}
+                  />
                 ))}
               </div>
             </div>
