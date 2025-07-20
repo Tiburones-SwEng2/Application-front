@@ -4,12 +4,12 @@ import { Link, useNavigate } from "react-router-dom";
 import "./RecuperarPasswordPage.css"; 
 import { ParticlesBackground } from "../loginPage/ParticlesBackground";
 
-
 function RecuperarPasswordPage() {
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const validateForm = () => {
@@ -32,17 +32,31 @@ function RecuperarPasswordPage() {
       setIsSubmitting(true);
       
       try {
-        // Aquí iría la llamada a tu API para recuperar contraseña
-        console.log("Solicitando recuperación para:", email);
-        
-        // Simulamos un retraso de red
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
+        const response = await fetch('http://localhost:5002/recover', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            setErrors({ submit: "El usuario no existe" });
+          } else {
+            setErrors({ submit: data.error || "Error al procesar la solicitud" });
+          }
+          return;
+        }
+
         // Mostrar mensaje de éxito
         setEmailSent(true);
+        setMessage(data.mensaje);
       } catch (error) {
         console.error("Error al recuperar contraseña:", error);
-        setErrors({ submit: "Error al procesar la solicitud. Inténtalo nuevamente." });
+        setErrors({ submit: "Error de conexión. Inténtalo nuevamente." });
       } finally {
         setIsSubmitting(false);
       }
@@ -58,22 +72,13 @@ function RecuperarPasswordPage() {
             <FaCheckCircle className="success-icon" />
             <h2>¡Correo enviado!</h2>
             <p>
-              Hemos enviado un enlace para restablecer tu contraseña a <strong>{email}</strong>.
+              Hemos enviado una nueva contraseña a <strong>{email}</strong>.
               Por favor revisa tu bandeja de entrada.
             </p>
             <p className="success-note">
-              Si no encuentras el correo, revisa tu carpeta de spam o solicita otro enlace.
+              {message} Si no encuentras el correo, revisa tu carpeta de spam.
             </p>
             <div className="success-actions">
-              <button 
-                onClick={() => {
-                  setEmailSent(false);
-                  setEmail("");
-                }} 
-                className="success-button"
-              >
-                Enviar otro correo
-              </button>
               <Link to="/login" className="back-to-login">
                 Volver al inicio de sesión
               </Link>
@@ -97,7 +102,7 @@ function RecuperarPasswordPage() {
             <FaKey />
           </div>
           <h2>Recuperar contraseña</h2>
-          <p>Ingresa tu email para recibir un enlace de recuperación</p>
+          <p>Ingresa tu email para recibir una nueva contraseña</p>
         </div>
         
         <form onSubmit={handleSubmit} className="password-form">
@@ -123,7 +128,7 @@ function RecuperarPasswordPage() {
             className="password-button"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Enviando..." : "Enviar enlace de recuperación"}
+            {isSubmitting ? "Enviando..." : "Enviar nueva contraseña"}
           </button>
         </form>
         
